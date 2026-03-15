@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>English Knowledge Base</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f5f5; padding: 20px; }
+  h1 { text-align: center; margin-bottom: 16px; font-size: 1.5em; }
+  .filters { text-align: center; margin-bottom: 16px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .filters button { padding: 6px 16px; border: 2px solid #ddd; border-radius: 20px; background: #fff; cursor: pointer; font-size: 14px; transition: all 0.2s; }
+  .filters button.active { border-color: #333; background: #333; color: #fff; }
+  .filters button:hover { border-color: #999; }
+  .sort-bar { text-align: center; margin-bottom: 16px; font-size: 13px; color: #666; }
+  .sort-bar select { padding: 4px 8px; border-radius: 6px; border: 1px solid #ccc; font-size: 13px; }
+  table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  th { background: #333; color: #fff; padding: 10px 12px; text-align: left; font-size: 14px; cursor: pointer; user-select: none; white-space: nowrap; }
+  th:first-child { width: 40px; text-align: center; }
+  td { padding: 10px 12px; border-bottom: 1px solid #eee; font-size: 14px; vertical-align: top; line-height: 1.6; }
+  td:first-child { text-align: center; font-size: 18px; }
+  tr:hover { background: #f9f9f9; }
+  tr.hidden { display: none; }
+  .example { color: #1a73e8; }
+  .note { color: #555; font-size: 13px; }
+  .count { text-align: center; margin-top: 12px; font-size: 13px; color: #999; }
+  @media (max-width: 600px) {
+    body { padding: 10px; }
+    td, th { padding: 8px 6px; font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+
+<h1>English Knowledge Base</h1>
+
+<div class="filters">
+  <button class="active" data-filter="all">All</button>
+  <button data-filter="🔴">🔴 Needs Work</button>
+  <button data-filter="🟡">🟡 Review Often</button>
+  <button data-filter="🟢">🟢 Got It</button>
+</div>
+
+<div class="sort-bar">
+  Sort by:
+  <select id="sortSelect">
+    <option value="priority">Priority (🔴 → 🟡 → 🟢)</option>
+    <option value="priority-rev">Priority (🟢 → 🟡 → 🔴)</option>
+    <option value="chinese">Chinese (A-Z)</option>
+  </select>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th></th>
+      <th>Chinese</th>
+      <th>Example</th>
+      <th>Note</th>
+    </tr>
+  </thead>
+  <tbody id="tableBody">
+  </tbody>
+</table>
+
+<div class="count" id="count"></div>
+
+<script>
+const data = [
+  ["🔴", "你能帮我整理一份交通选项的对比吗？", "Could you <b>put together</b> a <b>comparison</b> of transit options?", "comparison 拼写: compar-<b>i</b>-son; put together = 整理汇总"],
+  ["🔴", "盈利的变化让分析师们很意外。", "The <b>change in</b> earnings surprised analysts. / The earnings shift caught analysts off guard.", "change <b>in</b> + 事物 (不是 of); surprise 可直接做动词"],
+  ["🟡", "你对未来半年的前景怎么看？", "What's your outlook <b>over the next</b> six months?", "over the next + 时间段; 半年 = six months (不说 half year)"],
+  ["🟡", "市场对云计算的需求爆发式增长。", "The <b>demand for</b> cloud computing grew explosively. / Cloud computing demand surged.", "demand <b>for</b> + 事物; surge = 猛增"],
+  ["🟡", "我该怎么跟我经理提这件事？", "How should I <b>bring it up with</b> my manager? / How do I raise this with my manager?", "bring it up with + 人 = 跟某人提起; raise = 正式提出"],
+  ["🟡", "冲突正在迅速升级。", "The conflict is <b>escalating</b> rapidly. / The conflict is getting worse fast.", "escalate = 逐步升级(有失控感); rising = 中性上升"],
+  ["🟡", "市场情绪发生了转变。", "There's been a <b>shift in</b> market sentiment. / Market sentiment has changed.", "a shift in [sth] = …的转变"],
+  ["🟡", "多伦多各个社区的租金差异很大。", "Rent varies <b>across</b> Toronto neighborhoods. / Rent differs a lot from neighborhood to neighborhood.", "across = 在…各处; varies = 有差异"],
+  ["🟡", "我对科技行业的前景不太看好。", "My outlook for the tech industry <b>isn't looking good</b>. / I'm not optimistic about the tech industry.", "isn't looking good / isn't great 比 is not good 更自然; <b>the</b> + industry"],
+  ["🟡", "我最近开始了一份新工作。/ 我最近一直压力很大。", "I <b>recently</b> started a new job. / I've been stressed <b>lately</b>.", "recently + 过去式 (单次事件); lately + 完成时 (持续状态)"],
+  ["🟡", "他脾气很暴躁，没人想跟他合作。", "He's so <b>aggressive</b> that nobody wants to work with him. / He's so hot-tempered that no one wants to deal with him.", "aggressive = 暴躁好斗; driven = 有冲劲(正面); pushy = 强势(略负面)"],
+  ["🟡", "鉴于疲软的盈利数据，你对市场前景怎么看？", "<b>Given</b> the weak earnings, what's your outlook? / <b>Considering</b> the poor earnings, how do you see the market?", "Given [背景], [主句] = 鉴于; given 比 considering 更简洁正式"],
+  ["🟡", "租金涨了，但是工资没变。", "Rent went up<b>. However,</b> wages stayed the same. / Rent is rising <b>while</b> wages remain flat.", "however 连接独立句 → 句号/分号; while = 同句内对比"],
+  ["🟡", "我们搬家前比较了不同社区的交通选项。", "We compared different <b>neighborhoods'</b> transit options before moving.", "-s 结尾的复数名词所有格只加 '"],
+  ["🟡", "这周我们有三次小测验，我挂了两次。", "We had three <b>quizzes</b> this week and I failed two of them.", "quiz → quizzes: -z 结尾双写再加 -es"],
+  ["🟡", "你能推荐一个更好的表达吗？", "Could you suggest a better <b>expression</b>? / Is there a better way to say this?", "express = 动词; expression = 名词"],
+  ["🟡", "你对租金前景怎么看？", "What's your <b>outlook for</b> rent? / How do you see rent going?", "outlook <b>for</b> + 对象; 中文问句保持英文疑问句"],
+  ["🟡", "我通常去华人多的地方。", "I usually go to areas with <b>a large Chinese population</b>. / I tend to hang out in Chinese neighborhoods.", "a large [族群] population = …人多"],
+  ["🟡", "你能帮我整理汇总一下吗？", "Could you <b>put together</b> a summary? / Could you compile this for me?", "put together = 整理汇总; compile = 汇编"],
+  ["🟡", "光是摄像头就值得升级了。/ 你觉得值得多花这些租金吗？", "The camera alone is <b>worth the upgrade</b>. / Is it <b>worth paying</b> the extra rent?", "worth + 名词 / worth + -ing; alone = 光是…就"],
+  ["🟡", "我每个月付2000刀房租。", "I <b>pay</b> $2,000 <b>in</b> rent every month. / My rent is $2,000 a month.", "pay + 金额 + <b>in</b> rent; pay = 固定费用; spend = 一般花费"],
+  ["🟡", "这里周边环境很好。", "The <b>surroundings</b> are really nice here. / It's a nice area.", "surroundings (n.) 永远复数; surrounding (adj.) 可单数"],
+  ["🟡", "你有什么建议吗？", "Do you have <b>any</b> suggestions? / Any advice?", "疑问/否定 → any; 肯定 → some"],
+  ["🟡", "我需要对搬家这件事做个决定。", "I need to make a <b>decision about</b> moving. / I need to decide whether to move.", "decision <b>about</b> + 事情"],
+  ["🟡", "我明天要请假。", "I need to <b>take a day off</b> tomorrow. / I'm <b>calling in sick</b> tomorrow.", "take a day off = 请假; call in sick = 请病假; request time off = 正式"],
+  ["🟡", "这个地方交通很方便。/ 周四你方便吗？", "This area is <b>well-connected</b> by transit. / Does Thursday <b>work for</b> you?", "方便不直译 convenience; well-connected = 交通便利; work for = 时间合适"],
+  ["🟡", "我最近压力很大。", "I've been <b>under a lot of stress</b> lately. / I've been really stressed out lately.", "under a lot <b>of</b> stress; I + have (不是 has); overwhelmed = 更强"],
+  ["🟡", "能帮我加上周边环境的信息吗？", "Could you <b>include</b> information about the <b>surrounding area</b>? / Could you add some info on the neighborhood?", "include = 加上/包含; surrounding area = 周边环境"],
+  ["🟡", "这个地方住着很舒服。", "It's a really <b>nice area to live in</b>. / It's a great place to live.", "nice/great + place/area + to live in"],
+  ["🟡", "帮我整理一份对比，包括租金、交通和周边环境。", "Could you put together a comparison, <b>including</b> rent, transit, and the surrounding area?", "including [列表] = 包括…"],
+  ["🟡", "这个故事真暖心。/ 她是一个很暖心的人。", "That was such a <b>heartwarming</b> story. / She's a really <b>warmhearted</b> person.", "heartwarming = 暖心的事; warmhearted = 暖心的人"],
+  ["🟡", "虽然手机不错，但相机才是亮点。", "Although the phone is nice, the camera is the <b>highlight</b>. / The phone is decent, but the camera is the real standout.", "highlight/standout = 亮点; key = 关键(意思不同)"],
+  ["🟡", "这个手机性价比很高。", "This phone is great <b>value for money</b>. / You get a lot of bang for your buck with this phone.", "value <b>for</b> money = 性价比; bang for your buck = 口语"],
+  ["🟡", "这些变化让团队很不舒服。/ 我在网上查了很多评测。", "The changes <b>made</b> the team uncomfortable. / I <b>read</b> a lot of reviews online.", "不规则动词: make→made, read→read (发音变 /rɛd/)"],
+  ["🟢", "比特币在2017年突然火了。", "Bitcoin <b>took off</b> in 2017. / Bitcoin blew up in 2017.", "take off = 突然火起来 (比喻义)"],
+  ["🟢", "收入同比增长了20%。", "Revenue <b>grew</b> 20% year-over-year. / Revenue was up 20% YoY.", "grow (grew) + 数字/副词; explosively / rapidly / steadily"],
+  ["🟢", "给我一份这个项目的成本拆解。/ 他去年精神崩溃了。", "Give me a cost <b>breakdown</b>. / He had a nervous <b>breakdown</b>.", "breakdown = ①拆解分析 ②崩溃，看语境"],
+  ["🟢", "科学家在癌症研究上取得了突破。", "Scientists made a <b>breakthrough</b> in cancer research. / Scientists achieved a breakthrough in cancer research.", "make a breakthrough <b>in</b> [领域]"],
+  ["🟢", "你对科技股的前景怎么看？", "What's your <b>outlook</b> for tech stocks? / How do you see tech stocks going?", "outlook 比 prediction 更地道"],
+  ["🟢", "计算机能解决的问题的复杂性爆发式增长。", "The <b>complexity</b> of the problems computers could solve grew explosively.", "the complexity of [sth] = …的复杂性"],
+  ["🟢", "科技行业出现了一波裁员潮。", "The tech industry saw a <b>wave of layoffs</b>. / There was a massive round of layoffs in tech.", "wave of layoffs = 裁员潮"],
+  ["🟢", "帮我整理一份不同社区的租金分析。", "Could you put together a rent breakdown for different <b>neighborhoods</b>?", "neighborhood = 社区片区 (北美); 比 area 更具体"],
+  ["🟢", "给我一份不同社区的交通便利性对比。", "Give me a <b>transit accessibility</b> comparison for different neighborhoods.", "transit accessibility = 交通便利性"],
+  ["🟢", "远程办公在疫情期间突然火了。", "Remote work took off during <b>the pandemic</b>. / Remote work boomed during COVID.", "the pandemic / COVID = 疫情"],
+  ["🟢", "AI的能力爆发式增长。", "AI capabilities grew <b>explosively</b>. / AI capabilities surged.", "explosively = 爆发式地; surge = 猛增"],
+  ["🟢", "芯片没有进步，但AI却爆发了。", "Chips didn't improve, <b>yet</b> AI exploded. / Chips stagnated, but AI took off.", "yet (连词) = 但是, 比 but 正式"],
+  ["🟢", "为什么没有人注意到？", "<b>Why was it that</b> nobody noticed? / How come nobody noticed?", "Why was it that = 强调式提问; How come = 口语"],
+  ["🟢", "芯片还没有取得突破。", "Chips <b>had not seen</b> a breakthrough.", "had not + 过去分词 = 过去完成时 (更早的过去)"],
+  ["🟢", "搬到多伦多之前，我一直没有主动使用英语。", "I <b>hadn't been</b> using English actively before I moved to Toronto.", "否定词跟助动词: hadn't been (不是 had been not)"],
+  ["🟢", "我的进度会丢失的。", "My progress <b>will be lost</b>. / I'll lose my progress.", "被动: will be + 过去分词; 主动和被动语义不同"],
+  ["🟢", "我有一个提升英语的计划。", "I have a <b>plan to</b> improve my English.", "plan <b>to</b> + 动词"],
+  ["🟢", "你对市场的前景怎么看？/ 坚持是成功的关键。", "What's your outlook <b>for</b> the market? / Persistence is the key <b>to</b> success.", "for = 聚焦目标(静态); to = 走向动作(动态)"],
+  ["🟢", "我毕业于加拿大的一所大学。", "I <b>graduated from</b> a university in Canada.", "graduate <b>from</b> + 学校; <b>at</b> university = 在大学期间"],
+  ["🟢", "做小组作业时，我通常跟中国同学合作。", "I usually worked <b>with</b> Chinese classmates for group assignments. / I always teamed up with Chinese classmates.", "work with / team up with = 合作"],
+  ["🟢", "在大学有小组作业的时候，我总是跟中国同学组队。", "When I <b>had group assignments</b> at university, I always teamed up with Chinese classmates.", "have group assignments = 有小组作业"],
+  ["🟢", "我在加拿大有一些工作经验。", "I have some <b>work experience</b> in Canada.", "work experience 不可数, 用 some/extensive 修饰"],
+  ["🟢", "我通常在华人多的地方待着。", "I usually <b>spend time in</b> areas with a large Chinese population.", "spend time in [地点] / spend time [doing]"],
+  ["🟢", "给我一份租金分析。/ 市场信心正在动摇。", "Give me a <b>rent</b> breakdown. / The <b>shifting</b> market confidence is concerning.", "N+N 复合词: 修饰名词用单数原形 (rent, 不是 renting)"],
+  ["🟢", "你对北美消费者购买力的前景怎么看？", "What's your outlook for <b>consumer spending power</b> in North America?", "consumer spending power = 消费者购买力"],
+  ["🟢", "我以前不怎么主动使用英语。", "I did not <b>use English actively</b> very often.", "use English actively = 主动使用英语"],
+  ["🟢", "加油！", "<b>You've got this!</b> / <b>Let's go!</b>", "鼓励 = You've got this; 呐喊 = Let's go"],
+  ["🟢", "我玩得很开心。/ 我很高兴。/ 我很兴奋！", "I had a <b>great time</b>. / I'm <b>glad</b>. / I'm <b>excited</b>!", "great time / glad / excited 比 happy 更具体"],
+  ["🟢", "麻烦你帮个忙。", "<b>Could you</b> help me? / <b>Would you mind</b> helping?", "Could you / Would you mind = 礼貌请求"],
+  ["🟢", "给我一份QQQ的风险回报分析。", "<b>Give me</b> a breakdown <b>with</b> risk-reward <b>for</b> QQQ.", "模板: Give me [内容] with [补充] for [对象]"],
+  ["🟢", "鉴于这个冲突，你对QQQ未来两周的前景怎么看？", "<b>Given</b> the conflict, <b>what's your outlook for</b> QQQ <b>over</b> the next two weeks?", "模板: Given [背景], what's your outlook for [X] over [时间]?"],
+  ["🟢", "你能帮我查一下这个航班吗？", "Could you <b>help me check</b> this flight? / Could you look into this flight for me?", "help me + 动词原形 (不加 to)"],
+  ["🟢", "拼写易错词", "tomorrow, information, aggressive, although, comparison", "高频拼错，注意记忆"],
+];
+
+const priorityOrder = {"🔴": 0, "🟡": 1, "🟢": 2};
+let currentFilter = "all";
+
+function render() {
+  const sortBy = document.getElementById("sortSelect").value;
+  let sorted = [...data];
+
+  if (sortBy === "priority") {
+    sorted.sort((a, b) => priorityOrder[a[0]] - priorityOrder[b[0]]);
+  } else if (sortBy === "priority-rev") {
+    sorted.sort((a, b) => priorityOrder[b[0]] - priorityOrder[a[0]]);
+  } else if (sortBy === "chinese") {
+    sorted.sort((a, b) => a[1].localeCompare(b[1], "zh"));
+  }
+
+  const tbody = document.getElementById("tableBody");
+  tbody.innerHTML = "";
+  let shown = 0;
+
+  sorted.forEach(row => {
+    const visible = currentFilter === "all" || row[0] === currentFilter;
+    if (visible) shown++;
+    const tr = document.createElement("tr");
+    if (!visible) tr.classList.add("hidden");
+    tr.innerHTML = `<td>${row[0]}</td><td>${row[1]}</td><td class="example">${row[2]}</td><td class="note">${row[3]}</td>`;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById("count").textContent = `Showing ${shown} of ${data.length} entries`;
+}
+
+document.querySelectorAll(".filters button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".filters button").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    currentFilter = btn.dataset.filter;
+    render();
+  });
+});
+
+document.getElementById("sortSelect").addEventListener("change", render);
+
+render();
+</script>
+
+</body>
+</html>
